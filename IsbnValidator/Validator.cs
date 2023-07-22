@@ -1,4 +1,6 @@
-﻿namespace IsbnValidator
+﻿using System;
+
+namespace IsbnValidator
 {
     public static class Validator
     {
@@ -10,72 +12,42 @@
         /// <exception cref="ArgumentException"><paramref name="isbn"/> is empty or has only white-space characters.</exception>
         public static bool IsIsbnValid(string isbn)
         {
-            // TODO Analyze the method unit tests and implement the method.
-            if (string.IsNullOrWhiteSpace(isbn))
+            if (string.IsNullOrWhiteSpace(isbn) || isbn.Length == 0)
             {
-                throw new ArgumentException("Source string cannot be null or empty or whitespace.");
+                throw new ArgumentException($"string {nameof(isbn)} can't be null or whitespaces");
             }
 
-            bool result = default;
-            if (isbn.Length >= 10 && isbn.Length <= 13)
-            {
-                List<int> list = StringToList(isbn);
-                if (list != null && list.Count == 10)
-                {
-                    int sum = 0;
-                    int x = 10;
-                    for (int i = 0; i < list.Count; i++)
-                    {
-                        sum += list[i] * x--;
-                    }
+            int checkSum = 0;
+            int count = 0;
 
-                    if (sum % 11 == 0)
-                    {
-                        result = true;
-                    }
-                    else
-                    {
-                        result = false;
-                    }
-                }
-            }
-            else
+            for (int i = 0; i < isbn.Length; i++)
             {
-                result = false;
-            }
-
-            return result;
-        }
-
-        private static List<int> StringToList(string str)
-        {
-            if (str is null)
-            {
-                throw new ArgumentNullException(nameof(str));
-            }
-
-            List<int> list = new List<int>();
-            for (int i = 0; i < str.Length; i++)
-            {
-                if (int.TryParse(str[i].ToString(), out var number))
+                if (char.IsNumber(isbn[i]))
                 {
-                    list.Add(number);
+                    checkSum += int.Parse(isbn[i].ToString(), System.Globalization.CultureInfo.CurrentCulture) * (10 - count);
+                    count++;
                 }
-                else if ((i == 1 || i == 5 || i == 11) && str[i] == '-')
+                else if (char.IsLetter(isbn[i]) && isbn[i] != 'X')
                 {
-                    continue;
+                    return false;
                 }
-                else if (i == str.Length - 1 && str[i] == 'X')
+                else if (isbn[i] == '-' && i != 1 && i != 5 && i != isbn.Length - 2)
                 {
-                    list.Add(10);
-                }
-                else
-                {
-                    return null;
+                    return false;
                 }
             }
 
-            return list;
+            if (isbn[^1] == 'X')
+            {
+                checkSum += 10;
+            }
+
+            if (isbn.Length <= 13 && isbn.Length >= 10 && count >= 9 && count <= 10)
+            {
+                return checkSum % 11 == 0;
+            }
+
+            return false;
         }
     }
 }
